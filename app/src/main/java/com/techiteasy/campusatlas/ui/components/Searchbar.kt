@@ -16,6 +16,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,7 +37,11 @@ fun Searchbar(
         modifier = modifier
             .fillMaxWidth()
             .height(65.dp)
-            .padding(horizontal = 16.dp, vertical = 5.dp),
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .shadow(
+                elevation = 16.dp,
+                shape = RoundedCornerShape(60.dp)
+            ),
         textStyle = LocalTextStyle.current.copy(
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface

@@ -28,7 +28,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.techiteasy.campusatlas.ui.components.NavButtons
 
-// Sample Bookmark data class
 data class Bookmark(val name: String, val description: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +60,6 @@ fun BookmarksPanel(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val list = bookmarks.ifEmpty {
-                // Placeholder bookmarks until logic is implemented
                 listOf(
                     Bookmark("Library", "Main campus library"),
                     Bookmark("Cafeteria", "Food court and cafeteria"),
