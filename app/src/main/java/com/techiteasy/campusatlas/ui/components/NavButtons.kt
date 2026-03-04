@@ -12,28 +12,50 @@ import com.techiteasy.campusatlas.R
 fun NavButtons(
     navController: NavController,
     currentScreen: String,
+    onBookmarksClick: () -> Unit,
+    onMapClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    NavigationBar(
-        modifier = modifier,
-        tonalElevation = 4.dp
-    ) {
+    NavigationBar(modifier = modifier, tonalElevation = 4.dp) {
+
         NavigationBarItem(
             selected = currentScreen == "map",
-            onClick = { navController.navigate("map") },
-            icon = { Icon(painter = painterResource(R.drawable.ic_explore), contentDescription = "Map View") },
+            onClick = {
+                onMapClick()
+                if (navController.currentDestination?.route != "map") {
+                    navController.navigate("map") {
+                        popUpTo("map") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            },
+            icon = { Icon(painterResource(R.drawable.ic_explore), contentDescription = "Map View") },
             label = { Text("Map View") }
         )
+
         NavigationBarItem(
             selected = currentScreen == "bookmarks",
-            onClick = { navController.navigate("bookmarks") },
-            icon = { Icon(painter = painterResource(R.drawable.ic_bookmark), contentDescription = "Bookmarks") },
+            onClick = {
+                if (currentScreen != "bookmarks") {
+                    onBookmarksClick()
+                }
+            },
+            icon = { Icon(painterResource(R.drawable.ic_bookmark), contentDescription = "Bookmarks") },
             label = { Text("Bookmarks") }
         )
+
         NavigationBarItem(
-            selected = currentScreen == "Settings",
-            onClick = { navController.navigate("Settings") },
-            icon = { Icon(painter = painterResource(R.drawable.ic_settings), contentDescription = "Settings") },
+            selected = currentScreen == "settings",
+            onClick = {
+                onSettingsClick()
+                if (navController.currentDestination?.route != "settings") {
+                    navController.navigate("settings") {
+                        launchSingleTop = true
+                    }
+                }
+            },
+            icon = { Icon(painterResource(R.drawable.ic_settings), contentDescription = "Settings") },
             label = { Text("Settings") }
         )
     }

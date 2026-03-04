@@ -1,4 +1,4 @@
-package com.techiteasy.campusatlas.ui.auth
+package com.techiteasy.campusatlas.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
