@@ -14,7 +14,6 @@ fun NavButtons(
     currentScreen: String,
     onBookmarksClick: () -> Unit,
     onMapClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(modifier = modifier, tonalElevation = 4.dp) {
@@ -43,20 +42,6 @@ fun NavButtons(
             },
             icon = { Icon(painterResource(R.drawable.ic_bookmark), contentDescription = "Bookmarks") },
             label = { Text("Bookmarks") }
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == "settings",
-            onClick = {
-                onSettingsClick()
-                if (navController.currentDestination?.route != "settings") {
-                    navController.navigate("settings") {
-                        launchSingleTop = true
-                    }
-                }
-            },
-            icon = { Icon(painterResource(R.drawable.ic_settings), contentDescription = "Settings") },
-            label = { Text("Settings") }
         )
     }
 }

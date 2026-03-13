@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1093977573829",
+    "project_id": "pnhs---campusnav",
+    "storage_bucket": "pnhs---campusnav.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093977573829:android:0a2fb353816268ffb6e3ac",
+        "android_client_info": {
+          "package_name": "com.techiteasy.campusatlas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPlRfLKtEJ995Qfzw54u6b9BSmcoL8o5k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

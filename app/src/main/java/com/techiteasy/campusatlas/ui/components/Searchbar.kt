@@ -1,20 +1,13 @@
 package com.techiteasy.campusatlas.ui.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -29,59 +22,92 @@ import com.techiteasy.campusatlas.R
 fun Searchbar(
     searchText: String,
     onSearchChanged: (String) -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TextField(
-        value = searchText,
-        onValueChange = onSearchChanged,
+    val isDark = isSystemInDarkTheme()
+
+    val containerColor = if (isDark) Color(0xFF1A1A1A) else Color.White
+    val contentColor = if (isDark) Color.White else Color.Black
+    val shadowColor = if (isDark) Color.Transparent else Color.Black.copy(alpha = 0.1f)
+
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(65.dp)
-            .padding(horizontal = 16.dp, vertical = 5.dp)
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(60.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        TextField(
+            value = searchText,
+            onValueChange = onSearchChanged,
+            modifier = Modifier
+                .weight(1f)
+                .height(56.dp)
+                .shadow(
+                    elevation = if (isDark) 0.dp else 8.dp, 
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = shadowColor,
+                    spotColor = shadowColor
+                ),
+            textStyle = LocalTextStyle.current.copy(
+                fontSize = 15.sp,
+                color = contentColor
             ),
-        textStyle = LocalTextStyle.current.copy(
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        ),
-        placeholder = {
-            Text(
-                "Search location...",
-                fontSize = 13.sp
+            placeholder = { 
+                Text(
+                    "Search location...", 
+                    fontSize = 15.sp,
+                    color = contentColor.copy(alpha = 0.6f)
+                ) 
+            },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = "Search",
+                    modifier = Modifier.size(20.dp),
+                    tint = contentColor.copy(alpha = 0.7f)
+                )
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = contentColor
             )
-        },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_search),
-                contentDescription = "Search",
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(60.dp),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
         )
-    )
+
+        IconButton(
+            onClick = onSettingsClick,
+            modifier = Modifier
+                .size(56.dp)
+                .shadow(
+                    elevation = if (isDark) 0.dp else 8.dp, 
+                    shape = CircleShape,
+                    ambientColor = shadowColor,
+                    spotColor = shadowColor
+                )
+                .background(containerColor, CircleShape)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = "Settings",
+                modifier = Modifier.size(24.dp),
+                tint = contentColor.copy(alpha = 0.8f)
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun SearchbarPreview() {
-    var searchText by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Searchbar(
-                searchText = searchText,
-                onSearchChanged = { searchText = it }
-            )
-        }
-    }
+    Searchbar(
+        searchText = "",
+        onSearchChanged = {},
+        onSettingsClick = {}
+    )
 }
