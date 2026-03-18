@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.symbol.processing)
 }
 
 android {
@@ -37,9 +38,7 @@ android {
 }
 
 dependencies {
-    // Import the Firebase BoM
     implementation(platform(libs.firebase.bom))
-    // Add the dependency for the Firebase SDK for Google Analytics
     implementation(libs.firebase.analytics)
 
     implementation(libs.androidx.core.ktx)
@@ -51,6 +50,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation("androidx.navigation:navigation-compose:2.9.7")
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
