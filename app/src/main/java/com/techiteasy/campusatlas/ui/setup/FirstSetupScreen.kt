@@ -1,26 +1,40 @@
 package com.techiteasy.campusatlas.ui.setup
 
 import android.Manifest
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-//import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,66 +43,68 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 @Composable
 fun FirstSetupScreen(
     onFinish: () -> Unit
 ) {
+    val context = LocalContext.current
     var currentStep by remember { mutableIntStateOf(0) }
     var userMode by remember { mutableStateOf("User") } // "User" or "Admin"
     var schoolCode by remember { mutableStateOf("") }
     
+    // Admin Specific State
+    var isAdminLoggedIn by remember { mutableStateOf(false) }
+    var adminGeneratedCode by remember { mutableStateOf("") }
+    var mapImageUri by remember { mutableStateOf<Uri?>(null) }
+    var mapImageDimensions by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    
+    // Handle back gesture
+    BackHandler(enabled = currentStep > 0) {
+        currentStep--
+    }
+
+    // Check permission state for step 1
+    var isLocationPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // Validation logic for the "Next" button
+    val canProceed = when (currentStep) {
+        0 -> true
+        1 -> isLocationPermissionGranted
+        2 -> if (userMode == "User") {
+            schoolCode.isNotBlank()
+        } else {
+            isAdminLoggedIn && adminGeneratedCode.isNotBlank() && mapImageUri != null
+        }
+        else -> true
+    }
+    
     val colorScheme = MaterialTheme.colorScheme
 
     Scaffold(
-        containerColor = colorScheme.surfaceVariant
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Main Content Area
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp, vertical = 48.dp)
-            ) {
-                AnimatedContent(
-                    targetState = currentStep,
-                    transitionSpec = {
-                        fadeIn() togetherWith fadeOut()
-                    },
-                    label = "StepTransition"
-                ) { step ->
-                    when (step) {
-                        0 -> WelcomeStep()
-                        1 -> LocationPermissionStep(onPermissionGranted = { currentStep++ })
-                        2 -> UserSelectionStep(
-                            userMode = userMode,
-                            onModeChange = { userMode = it },
-                            schoolCode = schoolCode,
-                            onCodeChange = { schoolCode = it }
-                        )
-                        3 -> SetupCompleteStep(userMode = userMode)
-                    }
-                }
-            }
-
-            // Bottom Navigation Bar
+        containerColor = colorScheme.surfaceVariant,
+        bottomBar = {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
                 color = colorScheme.surface,
-                tonalElevation = 4.dp
+                tonalElevation = 8.dp
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 32.dp),
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(horizontal = 32.dp, vertical = 24.dp)
+                        .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -101,26 +117,83 @@ fun FirstSetupScreen(
                         )
                     }
 
-                    if (currentStep != 1) { 
-                        IconButton(
-                            onClick = {
-                                if (currentStep < 3) {
-                                    currentStep++
+                    FilledIconButton(
+                        onClick = {
+                            if (currentStep < 3) {
+                                currentStep++
+                            } else {
+                                onFinish()
+                            }
+                        },
+                        enabled = canProceed,
+                        modifier = Modifier.size(56.dp),
+                        shape = CircleShape,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = colorScheme.primary,
+                            contentColor = colorScheme.onPrimary,
+                            disabledContainerColor = colorScheme.onSurface.copy(alpha = 0.12f),
+                            disabledContentColor = colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (currentStep < 3) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Check,
+                            contentDescription = "Next",
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 48.dp)
+            ) {
+                AnimatedContent(
+                    targetState = currentStep,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "StepTransition"
+                ) { step ->
+                    when (step) {
+                        0 -> WelcomeStep()
+                        1 -> LocationPermissionStep(
+                            isGranted = isLocationPermissionGranted,
+                            onPermissionChanged = { isLocationPermissionGranted = it }
+                        )
+                        2 -> UserSelectionStep(
+                            userMode = userMode,
+                            onModeChange = { userMode = it },
+                            schoolCode = schoolCode,
+                            onCodeChange = { schoolCode = it },
+                            mapImageUri = mapImageUri,
+                            onImageSelected = { uri, dims -> 
+                                mapImageUri = uri
+                                mapImageDimensions = dims
+                            },
+                            isAdminLoggedIn = isAdminLoggedIn,
+                            onAdminLoginToggle = { loggedIn ->
+                                isAdminLoggedIn = loggedIn
+                                if (loggedIn) {
+                                    // Automatically generate a code when logged in
+                                    adminGeneratedCode = "PNHS-${Random.nextInt(1000, 9999)}"
                                 } else {
-                                    onFinish()
+                                    adminGeneratedCode = ""
+                                    mapImageUri = null
                                 }
                             },
-                            modifier = Modifier
-                                .size(56.dp)
-                                .background(colorScheme.primaryContainer, CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = if (currentStep < 3) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Check,
-                                contentDescription = "Next",
-                                tint = colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
+                            generatedCode = adminGeneratedCode
+                        )
+                        3 -> SetupCompleteStep(
+                            userMode = userMode,
+                            dimensions = mapImageDimensions
+                        )
                     }
                 }
             }
@@ -147,22 +220,14 @@ fun WelcomeStep() {
 }
 
 @Composable
-fun LocationPermissionStep(onPermissionGranted: () -> Unit) {
-    val context = LocalContext.current
-    var isPermissionGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
+fun LocationPermissionStep(
+    isGranted: Boolean,
+    onPermissionChanged: (Boolean) -> Unit
+) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        isPermissionGranted = granted
-        if (granted) onPermissionGranted()
+        onPermissionChanged(granted)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -184,9 +249,7 @@ fun LocationPermissionStep(onPermissionGranted: () -> Unit) {
         
         Button(
             onClick = {
-                if (isPermissionGranted) {
-                    onPermissionGranted()
-                } else {
+                if (!isGranted) {
                     launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
@@ -194,13 +257,14 @@ fun LocationPermissionStep(onPermissionGranted: () -> Unit) {
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (isGranted) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ),
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(20.dp),
+            enabled = !isGranted
         ) {
             Text(
-                if (isPermissionGranted) "Permission Granted - Continue" else "Grant Location Permission",
+                if (isGranted) "Permission Granted" else "Grant Location Permission",
                 fontWeight = FontWeight.Bold
             )
         }
@@ -213,9 +277,57 @@ fun UserSelectionStep(
     userMode: String,
     onModeChange: (String) -> Unit,
     schoolCode: String,
-    onCodeChange: (String) -> Unit
+    onCodeChange: (String) -> Unit,
+    mapImageUri: Uri?,
+    onImageSelected: (Uri?, Pair<Int, Int>?) -> Unit,
+    isAdminLoggedIn: Boolean,
+    onAdminLoginToggle: (Boolean) -> Unit,
+    generatedCode: String
 ) {
+    val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
+    var uploadError by remember { mutableStateOf<String?>(null) }
+    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Update preview if image is selected
+    LaunchedEffect(mapImageUri) {
+        if (mapImageUri != null) {
+            try {
+                context.contentResolver.openInputStream(mapImageUri)?.use { input ->
+                    val options = BitmapFactory.Options().apply { inSampleSize = 4 }
+                    previewBitmap = BitmapFactory.decodeStream(input, null, options)
+                }
+            } catch (_: Exception) {
+                previewBitmap = null
+            }
+        } else {
+            previewBitmap = null
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val result = validateCampusImage(context, uri)
+            if (result.isValid) {
+                uploadError = null
+                scope.launch {
+                    isUploading = true
+                    // Simulate uploading to firebase
+                    delay(2000)
+                    isUploading = false
+                    onImageSelected(uri, result.dimensions)
+                }
+            } else {
+                uploadError = result.errorMessage
+                onImageSelected(null, null)
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = "User Selection",
@@ -254,6 +366,7 @@ fun UserSelectionStep(
         Spacer(modifier = Modifier.height(32.dp))
         
         if (userMode == "User") {
+            // User UI
             Text(
                 text = "Choose the campus map, search for locations, and save bookmarks. Works offline after setup.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -273,70 +386,287 @@ fun UserSelectionStep(
                     focusedContainerColor = colorScheme.surface,
                     unfocusedBorderColor = colorScheme.outline,
                     focusedBorderColor = colorScheme.primary
-                )
+                ),
+                trailingIcon = {
+                    Surface(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = clipboard.primaryClip
+                            if (clip != null && clip.itemCount > 0) {
+                                val text = clip.getItemAt(0).text.toString()
+                                onCodeChange(text)
+                            }
+                        },
+                        modifier = Modifier.padding(end = 4.dp).size(36.dp),
+                        shape = CircleShape,
+                        color = colorScheme.surfaceVariant
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(id = com.techiteasy.campusatlas.R.drawable.content_paste_24px),
+                                contentDescription = "Paste",
+                                modifier = Modifier.size(20.dp),
+                                tint = colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             )
         } else {
+            // Admin UI
             Text(
-                text = "Manage campus map data, add or edit locations, and update information. Requires admin access.",
+                text = "Manage campus map data. First sign in to generate your campus code and enable map upload.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Sign Up Your Google Account", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            // 1. Admin Account
+            Text("Admin Account", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-
             Surface(
-                onClick = { /* Handle Google Sign In */ },
+                onClick = { 
+                    // Simulate Firebase login success
+                    onAdminLoginToggle(!isAdminLoggedIn) 
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = colorScheme.surface,
-                border = null,
+                color = if (isAdminLoggedIn) colorScheme.primaryContainer else colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        painter = painterResource(id = android.R.drawable.ic_menu_info_details),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = colorScheme.primary
+                        painterResource(id = com.techiteasy.campusatlas.R.drawable.google), 
+                        contentDescription = null, 
+                        modifier = Modifier.size(24.dp), 
+                        tint = Color.Unspecified
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("Sign in with Google", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text(
+                        if (isAdminLoggedIn) "Logged in with Google" else "Sign in with Google", 
+                        style = MaterialTheme.typography.bodyLarge, 
+                        fontWeight = FontWeight.Medium,
+                        color = if (isAdminLoggedIn) colorScheme.onPrimaryContainer else colorScheme.onSurface
+                    )
+                    if (isAdminLoggedIn) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.Check, contentDescription = null, tint = colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Upload Image", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+
+            // 2. Generated Code
+            Text("Generated Campus Code", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
-                value = "",
+                value = generatedCode,
                 onValueChange = {},
-                placeholder = { Text("Upload/Update Image here...") },
-                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                placeholder = { Text("Connect account to generate code") },
+                modifier = Modifier.fillMaxWidth().alpha(if (isAdminLoggedIn) 1f else 0.5f),
                 shape = RoundedCornerShape(20.dp),
-                trailingIcon = {
-                    Surface(
-                        modifier = Modifier.size(32.dp).padding(end = 4.dp),
-                        shape = CircleShape,
-                        color = colorScheme.secondaryContainer
-                    ) {
-                        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.padding(6.dp), tint = colorScheme.onSecondaryContainer)
-                    }
-                },
+                enabled = isAdminLoggedIn,
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = colorScheme.surface,
                     focusedContainerColor = colorScheme.surface,
-                    unfocusedBorderColor = colorScheme.outline,
-                    focusedBorderColor = colorScheme.primary
-                )
+                    disabledContainerColor = colorScheme.surface.copy(alpha = 0.5f)
+                ),
+                trailingIcon = {
+                    if (isAdminLoggedIn && generatedCode.isNotBlank()) {
+                        Surface(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = android.content.ClipData.newPlainText("Campus Code", generatedCode)
+                                clipboard.setPrimaryClip(clip)
+                            },
+                            modifier = Modifier.padding(end = 4.dp).size(36.dp),
+                            shape = CircleShape,
+                            color = colorScheme.surfaceVariant // Greyed out a bit as requested
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(id = com.techiteasy.campusatlas.R.drawable.copy_all_24px),
+                                    contentDescription = "Copy",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = colorScheme.onSurfaceVariant // Greyed out a bit as requested
+                                )
+                            }
+                        }
+                    }
+                }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 3. Campus Map Image
+            Text("Campus Map Image", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(modifier = Modifier.alpha(if (isAdminLoggedIn) 1f else 0.5f)) {
+                if (mapImageUri == null) {
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        enabled = isAdminLoggedIn && !isUploading,
+                        border = if (uploadError != null) androidx.compose.foundation.BorderStroke(1.dp, colorScheme.error) else ButtonDefaults.outlinedButtonBorder(enabled = isAdminLoggedIn)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (isUploading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = colorScheme.primary,
+                                    strokeWidth = 3.dp
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = com.techiteasy.campusatlas.R.drawable.upload_24px),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(if (isUploading) "Uploading to Firebase..." else "Click to Upload Map", fontWeight = FontWeight.SemiBold)
+                            Text("PNG/JPG • Min 1000px • Max 5MB", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(colorScheme.surfaceVariant)
+                            .border(1.dp, colorScheme.primary, RoundedCornerShape(20.dp))
+                    ) {
+                        previewBitmap?.let {
+                            Image(
+                                bitmap = it.asImageBitmap(),
+                                contentDescription = "Map preview",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        IconButton(
+                            onClick = { onImageSelected(null, null) },
+                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = colorScheme.error)
+                        }
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+                            color = colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Map Uploaded successfully",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (uploadError != null) {
+                Row(
+                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = colorScheme.error, modifier = Modifier.size(16.dp).padding(top = 2.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(uploadError!!, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
     }
+}
+
+data class ImageValidationResult(
+    val isValid: Boolean,
+    val errorMessage: String? = null,
+    val dimensions: Pair<Int, Int>? = null
+)
+
+fun validateCampusImage(context: Context, uri: Uri): ImageValidationResult {
+    val cr = context.contentResolver
+    
+    // 1. Check Format (PNG/JPG)
+    val mimeType = cr.getType(uri) ?: ""
+    if (!mimeType.contains("png") && !mimeType.contains("jpeg") && !mimeType.contains("jpg")) {
+        return ImageValidationResult(false, "Invalid format. Only PNG and JPG are accepted.")
+    }
+
+    // 2. Check File Size (Max 5MB)
+    var size: Long = 0
+    cr.query(uri, null, null, null, null)?.use { cursor ->
+        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+        if (cursor.moveToFirst()) size = cursor.getLong(sizeIndex)
+    }
+    if (size > 5 * 1024 * 1024) {
+        return ImageValidationResult(false, "File too large. Maximum size is 5MB.")
+    }
+
+    // 3. Check Resolution
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    try {
+        cr.openInputStream(uri)?.use { input -> BitmapFactory.decodeStream(input, null, options) }
+    } catch (_: Exception) {
+        return ImageValidationResult(false, "Could not process image file.")
+    }
+
+    val w = options.outWidth
+    val h = options.outHeight
+
+    if (w < 1000 || h < 1000) {
+        return ImageValidationResult(false, "Low resolution. Minimum 1000x1000 pixels required.")
+    }
+
+    // 4. Aspect Ratio (Max 3:1)
+    val ratio = w.toFloat() / h.toFloat()
+    if (ratio !in 0.33f..3.0f) {
+        return ImageValidationResult(false, "Image is too stretched. Aspect ratio should be between 1:3 and 3:1.")
+    }
+
+    // 5. Brightness Check
+    try {
+        val scaleOptions = BitmapFactory.Options().apply { inSampleSize = 8 }
+        cr.openInputStream(uri)?.use { input ->
+            val bitmap = BitmapFactory.decodeStream(input, null, scaleOptions)
+            if (bitmap != null) {
+                var totalBrightness = 0L
+                val pixels = IntArray(bitmap.width * bitmap.height)
+                bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                for (p in pixels) {
+                    val r = (p shr 16) and 0xFF
+                    val g = (p shr 8) and 0xFF
+                    val b = p and 0xFF
+                    totalBrightness += (r + g + b) / 3
+                }
+                val avg = totalBrightness / (bitmap.width * bitmap.height)
+                if (avg < 50) return ImageValidationResult(false, "Image is too dark. Please provide a clear map.")
+            }
+        }
+    } catch (_: Exception) {}
+
+    return ImageValidationResult(true, dimensions = Pair(w, h))
 }
 
 @Composable
@@ -362,13 +692,17 @@ fun ModeButton(
 }
 
 @Composable
-fun SetupCompleteStep(userMode: String) {
+fun SetupCompleteStep(
+    userMode: String,
+    dimensions: Pair<Int, Int>? = null
+) {
+    val colorScheme = MaterialTheme.colorScheme
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = "Setup Complete",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -377,9 +711,17 @@ fun SetupCompleteStep(userMode: String) {
             else 
                 "You now have access to manage campus map data and locations.",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             lineHeight = 22.sp
         )
+        if (userMode == "Admin" && dimensions != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Map resolution: ${dimensions.first} x ${dimensions.second} px",
+                style = MaterialTheme.typography.bodySmall,
+                color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 
