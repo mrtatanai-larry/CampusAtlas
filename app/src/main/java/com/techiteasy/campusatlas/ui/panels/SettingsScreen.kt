@@ -36,7 +36,11 @@ import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBackClick: () -> Unit) {
+fun SettingsScreen(
+    isAdminMode: Boolean = false,
+    onAdminModeChange: (Boolean) -> Unit = {},
+    onBackClick: () -> Unit
+) {
     val context = LocalContext.current
     val isDark = isSystemInDarkTheme()
     
@@ -123,7 +127,11 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("App Mode", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text("Current Mode: User", fontSize = 12.sp, color = secondaryTextColor)
+                        Text(
+                            text = "Current Mode: ${if (isAdminMode) "Admin" else "User"}",
+                            fontSize = 12.sp,
+                            color = secondaryTextColor
+                        )
                     }
                     
                     Spacer(modifier = Modifier.height(20.dp))
@@ -131,7 +139,7 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         // Switch to Admin Button using drawable icons
                         Surface(
-                            onClick = { /* Admin Click Logic */ },
+                            onClick = { onAdminModeChange(!isAdminMode) },
                             modifier = Modifier.weight(1.1f).height(64.dp),
                             shape = RoundedCornerShape(20.dp),
                             color = if (isDark) Color(0xFF2C2C2E) else Color(0xFFD1D1D6)
@@ -149,7 +157,12 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Switch to Admin", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textColor)
+                                Text(
+                                    text = if (isAdminMode) "Switch to User" else "Switch to Admin",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = textColor
+                                )
                             }
                         }
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,7 +50,7 @@ import kotlin.random.Random
 
 @Composable
 fun FirstSetupScreen(
-    onFinish: () -> Unit
+    onFinish: (isAdminSelected: Boolean) -> Unit
 ) {
     val context = LocalContext.current
     var currentStep by remember { mutableIntStateOf(0) }
@@ -90,6 +91,7 @@ fun FirstSetupScreen(
     }
     
     val colorScheme = MaterialTheme.colorScheme
+    val layoutDirection = LocalLayoutDirection.current
 
     Scaffold(
         containerColor = colorScheme.surfaceVariant,
@@ -122,7 +124,7 @@ fun FirstSetupScreen(
                             if (currentStep < 3) {
                                 currentStep++
                             } else {
-                                onFinish()
+                                onFinish(userMode == "Admin")
                             }
                         },
                         enabled = canProceed,
@@ -148,13 +150,19 @@ fun FirstSetupScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                    bottom = innerPadding.calculateBottomPadding()
+                )
+                .statusBarsPadding()
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp, vertical = 48.dp)
+                    .padding(horizontal = 32.dp)
+                    .padding(top = 20.dp, bottom = 48.dp) // Increase top Spacing
             ) {
                 AnimatedContent(
                     targetState = currentStep,
@@ -328,7 +336,7 @@ fun UserSelectionStep(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "User Selection",
             style = MaterialTheme.typography.headlineMedium,
@@ -381,6 +389,7 @@ fun UserSelectionStep(
                 placeholder = { Text("Enter School Provided Code") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
+                singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = colorScheme.surface,
                     focusedContainerColor = colorScheme.surface,
@@ -471,6 +480,7 @@ fun UserSelectionStep(
                 modifier = Modifier.fillMaxWidth().alpha(if (isAdminLoggedIn) 1f else 0.5f),
                 shape = RoundedCornerShape(20.dp),
                 enabled = isAdminLoggedIn,
+                singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = colorScheme.surface,
                     focusedContainerColor = colorScheme.surface,
@@ -599,76 +609,6 @@ fun UserSelectionStep(
     }
 }
 
-data class ImageValidationResult(
-    val isValid: Boolean,
-    val errorMessage: String? = null,
-    val dimensions: Pair<Int, Int>? = null
-)
-
-fun validateCampusImage(context: Context, uri: Uri): ImageValidationResult {
-    val cr = context.contentResolver
-    
-    // 1. Check Format (PNG/JPG)
-    val mimeType = cr.getType(uri) ?: ""
-    if (!mimeType.contains("png") && !mimeType.contains("jpeg") && !mimeType.contains("jpg")) {
-        return ImageValidationResult(false, "Invalid format. Only PNG and JPG are accepted.")
-    }
-
-    // 2. Check File Size (Max 5MB)
-    var size: Long = 0
-    cr.query(uri, null, null, null, null)?.use { cursor ->
-        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-        if (cursor.moveToFirst()) size = cursor.getLong(sizeIndex)
-    }
-    if (size > 5 * 1024 * 1024) {
-        return ImageValidationResult(false, "File too large. Maximum size is 5MB.")
-    }
-
-    // 3. Check Resolution
-    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    try {
-        cr.openInputStream(uri)?.use { input -> BitmapFactory.decodeStream(input, null, options) }
-    } catch (_: Exception) {
-        return ImageValidationResult(false, "Could not process image file.")
-    }
-
-    val w = options.outWidth
-    val h = options.outHeight
-
-    if (w < 1000 || h < 1000) {
-        return ImageValidationResult(false, "Low resolution. Minimum 1000x1000 pixels required.")
-    }
-
-    // 4. Aspect Ratio (Max 3:1)
-    val ratio = w.toFloat() / h.toFloat()
-    if (ratio !in 0.33f..3.0f) {
-        return ImageValidationResult(false, "Image is too stretched. Aspect ratio should be between 1:3 and 3:1.")
-    }
-
-    // 5. Brightness Check
-    try {
-        val scaleOptions = BitmapFactory.Options().apply { inSampleSize = 8 }
-        cr.openInputStream(uri)?.use { input ->
-            val bitmap = BitmapFactory.decodeStream(input, null, scaleOptions)
-            if (bitmap != null) {
-                var totalBrightness = 0L
-                val pixels = IntArray(bitmap.width * bitmap.height)
-                bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-                for (p in pixels) {
-                    val r = (p shr 16) and 0xFF
-                    val g = (p shr 8) and 0xFF
-                    val b = p and 0xFF
-                    totalBrightness += (r + g + b) / 3
-                }
-                val avg = totalBrightness / (bitmap.width * bitmap.height)
-                if (avg < 50) return ImageValidationResult(false, "Image is too dark. Please provide a clear map.")
-            }
-        }
-    } catch (_: Exception) {}
-
-    return ImageValidationResult(true, dimensions = Pair(w, h))
-}
-
 @Composable
 fun ModeButton(
     text: String,
@@ -722,6 +662,51 @@ fun SetupCompleteStep(
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
+    }
+}
+
+data class ImageValidationResult(
+    val isValid: Boolean,
+    val errorMessage: String? = null,
+    val dimensions: Pair<Int, Int>? = null
+)
+
+private fun validateCampusImage(context: Context, uri: Uri): ImageValidationResult {
+    val contentResolver = context.contentResolver
+    
+    // Check file size (max 5MB)
+    val fileSize = try {
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIndex != -1) cursor.getLong(sizeIndex) else 0L
+            } else 0L
+        } ?: 0L
+    } catch (_: Exception) {
+        0L
+    }
+    
+    if (fileSize > 5 * 1024 * 1024) {
+        return ImageValidationResult(false, "Image size exceeds 5MB limit.")
+    }
+    
+    // Check dimensions (min 1000px)
+    return try {
+        contentResolver.openInputStream(uri)?.use { input ->
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeStream(input, null, options)
+            
+            val width = options.outWidth
+            val height = options.outHeight
+            
+            if (width < 1000 || height < 1000) {
+                ImageValidationResult(false, "Image must be at least 1000x1000 pixels (Current: ${width}x${height}px).")
+            } else {
+                ImageValidationResult(true, dimensions = Pair(width, height))
+            }
+        } ?: ImageValidationResult(false, "Could not read image file.")
+    } catch (e: Exception) {
+        ImageValidationResult(false, "Error processing image: ${e.localizedMessage}")
     }
 }
 
