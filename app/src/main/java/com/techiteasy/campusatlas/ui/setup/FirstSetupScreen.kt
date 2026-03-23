@@ -19,12 +19,17 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +44,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,9 +62,11 @@ fun FirstSetupScreen(
 ) {
     val context = LocalContext.current
     var currentStep by remember { mutableIntStateOf(0) }
-    var userMode by remember { mutableStateOf("User") } // "User" or "Admin"
+    var userMode by remember { mutableStateOf("User") }
     var schoolCode by remember { mutableStateOf("") }
-    
+    var adminPassword by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf(false) }
+
     // Admin Specific State
     var isAdminLoggedIn by remember { mutableStateOf(false) }
     var adminGeneratedCode by remember { mutableStateOf("") }
@@ -85,7 +95,8 @@ fun FirstSetupScreen(
         2 -> if (userMode == "User") {
             schoolCode.isNotBlank()
         } else {
-            isAdminLoggedIn && adminGeneratedCode.isNotBlank() && mapImageUri != null
+            // Button will be highlighted even if password is wrong
+            adminPassword.isNotBlank() && isAdminLoggedIn && adminGeneratedCode.isNotBlank() && mapImageUri != null
         }
         else -> true
     }
@@ -121,7 +132,14 @@ fun FirstSetupScreen(
 
                     FilledIconButton(
                         onClick = {
-                            if (currentStep < 3) {
+                            if (currentStep == 2 && userMode == "Admin") {
+                                if (adminPassword == "Pnhs") {
+                                    passwordError = false
+                                    currentStep++
+                                } else {
+                                    passwordError = true
+                                }
+                            } else if (currentStep < 3) {
                                 currentStep++
                             } else {
                                 onFinish(userMode == "Admin")
@@ -180,6 +198,12 @@ fun FirstSetupScreen(
                             onModeChange = { userMode = it },
                             schoolCode = schoolCode,
                             onCodeChange = { schoolCode = it },
+                            adminPassword = adminPassword,
+                            onPasswordChange = { 
+                                adminPassword = it
+                                passwordError = false // Clear error when typing
+                            },
+                            passwordError = passwordError,
                             mapImageUri = mapImageUri,
                             onImageSelected = { uri, dims -> 
                                 mapImageUri = uri
@@ -286,6 +310,9 @@ fun UserSelectionStep(
     onModeChange: (String) -> Unit,
     schoolCode: String,
     onCodeChange: (String) -> Unit,
+    adminPassword: String,
+    onPasswordChange: (String) -> Unit,
+    passwordError: Boolean,
     mapImageUri: Uri?,
     onImageSelected: (Uri?, Pair<Int, Int>?) -> Unit,
     isAdminLoggedIn: Boolean,
@@ -297,6 +324,7 @@ fun UserSelectionStep(
     var uploadError by remember { mutableStateOf<String?>(null) }
     var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isUploading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // Update preview if image is selected
@@ -336,7 +364,7 @@ fun UserSelectionStep(
         }
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text(
             text = "User Selection",
             style = MaterialTheme.typography.headlineMedium,
@@ -428,6 +456,52 @@ fun UserSelectionStep(
                 style = MaterialTheme.typography.bodyMedium,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Admin Password Field
+            Text("App Admin Password", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = adminPassword,
+                onValueChange = onPasswordChange,
+                placeholder = { Text("Put Required Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                isError = passwordError,
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = colorScheme.primary.copy(alpha = 0.5f),
+                    errorContainerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    errorBorderColor = colorScheme.error
+                ),
+                trailingIcon = {
+                    IconButton(
+                        onClick = { passwordVisible = !passwordVisible },
+                        modifier = Modifier.alpha(0.8f) // 80 percent translucent
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            tint = if (passwordError) colorScheme.error else colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            )
+            
+            if (passwordError) {
+                Text(
+                    text = "Password is wrong",
+                    color = colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
 
             // 1. Admin Account
@@ -713,14 +787,6 @@ private fun validateCampusImage(context: Context, uri: Uri): ImageValidationResu
 @Preview(showBackground = true)
 @Composable
 fun FirstSetupScreenPreview() {
-    CampusAtlasTheme {
-        FirstSetupScreen(onFinish = {})
-    }
-}
-
-@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun FirstSetupScreenDarkPreview() {
     CampusAtlasTheme {
         FirstSetupScreen(onFinish = {})
     }

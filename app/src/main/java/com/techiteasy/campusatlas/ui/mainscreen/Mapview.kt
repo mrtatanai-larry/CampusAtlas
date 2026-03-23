@@ -2,7 +2,6 @@ package com.techiteasy.campusatlas.ui.mainscreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.runtime.*
@@ -53,11 +52,8 @@ fun Mapview(
                             .fillMaxWidth()
                             .fillMaxHeight(0.92f)
                             .padding(bottom = 80.dp)
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            item { BookmarksScreen() }
-                        }
+                        BookmarksScreen()
                     }
                 }
             },
@@ -86,13 +82,7 @@ fun Mapview(
 
                 if (isAdminMode) {
                     AdminMapOverlay(
-                        navController = navController,
-                        showRunSetup = !hasMapContent,
-                        onRunSetupClick = {
-                            navController.navigate("setup") {
-                                launchSingleTop = true
-                            }
-                        }
+                        navController = navController
                     )
                 } else {
                     Searchbar(

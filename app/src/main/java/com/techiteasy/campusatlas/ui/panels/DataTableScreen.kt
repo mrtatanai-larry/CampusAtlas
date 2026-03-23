@@ -1,5 +1,6 @@
 package com.techiteasy.campusatlas.ui.panels
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -45,12 +46,12 @@ fun DataTableScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { /* TODO: Upload to Firebase */ },
-                containerColor = colorScheme.primaryContainer,
-                contentColor = colorScheme.onPrimaryContainer,
+                containerColor = colorScheme.primary,
+                contentColor = colorScheme.onPrimary,
                 shape = CircleShape,
                 modifier = Modifier.padding(bottom = 9.dp, end = 3.dp)
             ) {
-                Text("Upload to Firebase", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                Text("Upload to Firebase", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.width(12.dp))
                 Icon(
                     painter = painterResource(R.drawable.database_upload_24px),
@@ -72,7 +73,7 @@ fun DataTableScreen(
             
             Text(
                 text = "Database",
-                fontSize = 40.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = colorScheme.onBackground,
                 letterSpacing = (-1).sp
@@ -83,20 +84,19 @@ fun DataTableScreen(
             // Generated Code Section
             Text(
                 text = "Generated Code",
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onBackground.copy(alpha = 0.8f)
+                color = colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().height(72.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left part: Code display (Pill shape cut on the right)
                 Surface(
                     modifier = Modifier.weight(1.8f).fillMaxHeight(),
-                    shape = RoundedCornerShape(topStart = 42.dp, bottomStart = 42.dp, topEnd = 8.dp, bottomEnd = 8.dp),
-                    color = colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                    shape = RoundedCornerShape(topStart = 36.dp, bottomStart = 36.dp, topEnd = 8.dp, bottomEnd = 8.dp),
+                    color = colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 20.dp),
@@ -105,8 +105,8 @@ fun DataTableScreen(
                     ) {
                         Text(
                             text = "Generated Code Will Display here",
-                            color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            fontSize = 8.sp
+                            color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall
                         )
                         Icon(
                             painter = painterResource(R.drawable.copy_all_24px),
@@ -117,27 +117,26 @@ fun DataTableScreen(
                     }
                 }
                 
-                Spacer(modifier = Modifier.width(3.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 
-                // Right part: Regenerate Button Container (Pill shape cut on the left)
                 Surface(
                     modifier = Modifier.weight(1.1f).fillMaxHeight(),
-                    shape = RoundedCornerShape(topEnd = 42.dp, bottomEnd = 42.dp, topStart = 8.dp, bottomStart = 8.dp),
-                    color = colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                    shape = RoundedCornerShape(topEnd = 36.dp, bottomEnd = 36.dp, topStart = 8.dp, bottomStart = 8.dp),
+                    color = colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
                         Surface(
                             onClick = { /* TODO */ },
                             modifier = Modifier.fillMaxSize(),
-                            shape = RoundedCornerShape(32.dp),
-                            color = colorScheme.surface
+                            shape = RoundedCornerShape(24.dp),
+                            color = colorScheme.primaryContainer
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     "Regenerate",
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 8.sp,
-                                    color = colorScheme.onSurface
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -145,20 +144,20 @@ fun DataTableScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Upload Image Section
             Text(
                 text = "Upload Image",
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onBackground.copy(alpha = 0.8f)
+                color = colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth().height(72.dp),
-                shape = RoundedCornerShape(42.dp),
-                color = colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                shape = RoundedCornerShape(36.dp),
+                color = colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 24.dp),
@@ -167,20 +166,20 @@ fun DataTableScreen(
                 ) {
                     Text(
                         text = "Upload/Update Image here...",
-                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        fontSize = 8.sp
+                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                     Surface(
                         onClick = { /* TODO */ },
                         shape = CircleShape,
-                        color = colorScheme.primaryContainer,
-                        modifier = Modifier.size(42.dp)
+                        color = colorScheme.secondaryContainer,
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 painter = painterResource(R.drawable.upload_24px),
                                 contentDescription = "Upload",
-                                tint = colorScheme.onPrimaryContainer,
+                                tint = colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -193,13 +192,13 @@ fun DataTableScreen(
             // Mark Locations Section
             Text(
                 text = "Mark Locations",
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onBackground.copy(alpha = 0.8f)
+                color = colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Empty space for cards as requested
+            // Empty space for cards
             Spacer(modifier = Modifier.height(200.dp))
         }
     }
@@ -209,14 +208,6 @@ fun DataTableScreen(
 @Composable
 fun DataTableScreenLightPreview() {
     CampusAtlasTheme(darkTheme = false) {
-        DataTableScreen(navController = rememberNavController())
-    }
-}
-
-@Preview(showBackground = true, name = "Dark Mode")
-@Composable
-fun DataTableScreenDarkPreview() {
-    CampusAtlasTheme(darkTheme = true) {
         DataTableScreen(navController = rememberNavController())
     }
 }

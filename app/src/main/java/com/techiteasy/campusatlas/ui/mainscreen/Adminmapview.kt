@@ -2,18 +2,14 @@ package com.techiteasy.campusatlas.ui.mainscreen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.techiteasy.campusatlas.R
 import com.techiteasy.campusatlas.ui.components.AdminTools
 import com.techiteasy.campusatlas.ui.components.NavButtons
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
@@ -21,12 +17,8 @@ import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
 @Composable
 fun AdminMapOverlay(
     navController: NavController,
-    onRunSetupClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    showRunSetup: Boolean = true
+    modifier: Modifier = Modifier
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    
     Box(modifier = modifier.fillMaxSize()) {
         AdminTools(
             onSettingsClick = {
@@ -36,32 +28,6 @@ fun AdminMapOverlay(
                 .align(Alignment.TopCenter)
                 .padding(top = 48.dp)
         )
-        
-        // Run Setup Button - Positioned at the bottom end, only shown if showRunSetup is true
-        if (showRunSetup) {
-            ExtendedFloatingActionButton(
-                onClick = onRunSetupClick,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 124.dp, end = 24.dp),
-                containerColor = colorScheme.secondaryContainer,
-                contentColor = colorScheme.onSecondaryContainer,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp),
-                shape = RoundedCornerShape(24.dp),
-            ) {
-                Text(
-                    text = "Run Setup", 
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(
-                    painter = painterResource(id = R.drawable.build_circle_24px),
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
     }
 }
 
@@ -78,9 +44,7 @@ fun AdminMapOverlayPreview() {
                 }
                 
                 AdminMapOverlay(
-                    navController = navController,
-                    onRunSetupClick = {},
-                    showRunSetup = true
+                    navController = navController
                 )
                 
                 NavButtons(
@@ -107,9 +71,7 @@ fun AdminMapOverlayDarkPreview() {
                 }
                 
                 AdminMapOverlay(
-                    navController = navController,
-                    onRunSetupClick = {},
-                    showRunSetup = true
+                    navController = navController
                 )
                 
                 NavButtons(

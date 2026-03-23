@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.techiteasy.campusatlas.R
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
 import kotlinx.coroutines.delay
@@ -37,12 +39,14 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    navController: NavController,
     isAdminMode: Boolean = false,
+    canSwitchAdminMode: Boolean = false,
     onAdminModeChange: (Boolean) -> Unit = {},
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val isDark = isSystemInDarkTheme()
+    val colorScheme = MaterialTheme.colorScheme
     
     // State for floating message
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -70,237 +74,201 @@ fun SettingsScreen(
         }
     }
 
-    val backgroundColor = if (isDark) Color.Black else Color(0xFFFBFBFF)
-    val cardColor = if (isDark) Color(0xFF1C1C1E) else Color(0xFFE5E5EA)
-    val textColor = if (isDark) Color.White else Color(0xFF1C1C1E)
-    val secondaryTextColor = if (isDark) Color.Gray else Color(0xFF8E8E93)
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 17.dp)
+                .padding(horizontal = 20.dp)
         ) {
-            // Updated top padding
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Circular Back Button
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(if (isDark) Color(0xFF2C2C2E) else Color(0xFFE5E5EA), CircleShape)
+            // Top Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = textColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(colorScheme.surfaceVariant, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                if (isAdminMode) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.account_circle_24px),
+                        contentDescription = "Account",
+                        tint = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text = "Settings",
-                fontSize = 34.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = textColor,
-                letterSpacing = (-1).sp
+                color = colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // App Mode Card Section
-            Card(
-                shape = RoundedCornerShape(32.dp),
-                colors = CardDefaults.cardColors(containerColor = cardColor),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("App Mode", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text(
-                            text = "Current Mode: ${if (isAdminMode) "Admin" else "User"}",
-                            fontSize = 12.sp,
-                            color = secondaryTextColor
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(20.dp))
-                    
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Switch to Admin Button using drawable icons
-                        Surface(
-                            onClick = { onAdminModeChange(!isAdminMode) },
-                            modifier = Modifier.weight(1.1f).height(64.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isDark) Color(0xFF2C2C2E) else Color(0xFFD1D1D6)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp)
-                            ) {
-                                Surface(modifier = Modifier.size(34.dp), shape = CircleShape, color = Color(0xFFF2D398)) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.compare_arrows_24px),
-                                        contentDescription = null,
-                                        modifier = Modifier.padding(7.dp),
-                                        tint = Color.Black
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (isAdminMode) "Switch to User" else "Switch to Admin",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = textColor
-                                )
-                            }
-                        }
-
-                        // School Code TextField
-                        TextField(
-                            value = "",
-                            onValueChange = {},
-                            placeholder = { Text("Enter School Code.....", fontSize = 11.sp, color = secondaryTextColor) },
-                            modifier = Modifier.weight(0.9f).height(64.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = if (isDark) Color(0xFF2C2C2E) else Color(0xFFD1D1D6),
-                                unfocusedContainerColor = if (isDark) Color(0xFF2C2C2E) else Color(0xFFD1D1D6),
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                cursorColor = textColor
-                            ),
-                            singleLine = true
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Reset Button
-                    Surface(
-                        onClick = { /* Reset Click Logic */ },
-                        modifier = Modifier.fillMaxWidth().height(64.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isDark) Color(0xFF2C2C2E) else Color(0xFFD1D1D6)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Surface(modifier = Modifier.size(34.dp), shape = CircleShape, color = Color(0xFFA8F2A8)) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.restart_alt_24px),
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(7.dp),
-                                    tint = Color.Black
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("Reset app setup", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textColor)
-                        }
-                    }
-                }
+            if (isAdminMode || canSwitchAdminMode) {
+                Text(
+                    text = "App Mode",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.onBackground
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.compare_arrows_24px),
+                    iconBg = Color(0xFFF0E4B8),
+                    iconTint = Color(0xFF8B7500),
+                    text = if (isAdminMode) "Switch to User" else "Switch to Admin",
+                    onClick = { onAdminModeChange(!isAdminMode) }
+                )
             }
 
-            // Map Data Section
-            SettingsSectionTitle("Map Data", textColor)
-            SettingsPillItem(
-                painter = painterResource(id = R.drawable.restart_alt_24px),
-                iconBg = Color(0xFFA8A8F2),
-                text = "Refresh Map Data",
-                textColor = textColor,
-                cardColor = cardColor,
-                onClick = { /* Logic for Refresh Map Data */ }
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            SettingsPillItem(
-                painter = painterResource(id = R.drawable.cached_24px),
-                iconBg = Color(0xFFF2A8A8),
-                text = "Clear App Cache",
-                textColor = textColor,
-                cardColor = cardColor,
-                onClick = { 
-                    try {
-                        val size = getFolderSize(context.cacheDir)
-                        val formattedSize = Formatter.formatFileSize(context, size)
-                        context.cacheDir.deleteRecursively()
-                        snackbarMessage = "Cache removed $formattedSize"
-                    } catch (_: Exception) {
-                        // Cache clear failed silently
+            if (isAdminMode) {
+                SettingsSectionTitle("Tools")
+                
+                SettingsPillItem(
+                    icon = Icons.Default.HelpOutline,
+                    iconBg = Color(0xFFC4D3FF),
+                    iconTint = Color(0xFF00227B),
+                    text = "Help",
+                    onClick = { /* Logic for Help */ }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.cached_24px),
+                    iconBg = Color(0xFFFFB3B3),
+                    iconTint = Color(0xFFB3261E),
+                    text = "Clear App Cache",
+                    onClick = { 
+                        try {
+                            val size = getFolderSize(context.cacheDir)
+                            val formattedSize = Formatter.formatFileSize(context, size)
+                            context.cacheDir.deleteRecursively()
+                            snackbarMessage = "Cache removed $formattedSize"
+                        } catch (_: Exception) { }
                     }
-                }
-            )
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.restart_alt_24px),
+                    iconBg = Color(0xFFB3F5BC),
+                    iconTint = Color(0xFF1B5E20),
+                    text = "Reset App Setup",
+                    onClick = {
+                        navController.navigate("setup") {
+                            popUpTo("settings") { inclusive = true }
+                        }
+                    }
+                )
+            } else {
+                SettingsSectionTitle("App Data")
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.restart_alt_24px),
+                    iconBg = Color(0xFFB3F5BC),
+                    iconTint = Color(0xFF1B5E20),
+                    text = "Reset App Setup",
+                    onClick = {
+                        navController.navigate("setup") {
+                            popUpTo("settings") { inclusive = true }
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.cached_24px),
+                    iconBg = Color(0xFFFFB3B3),
+                    iconTint = Color(0xFFB3261E),
+                    text = "Clear App Cache",
+                    onClick = { 
+                        try {
+                            val size = getFolderSize(context.cacheDir)
+                            val formattedSize = Formatter.formatFileSize(context, size)
+                            context.cacheDir.deleteRecursively()
+                            snackbarMessage = "Cache removed $formattedSize"
+                        } catch (_: Exception) { }
+                    }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                SettingsPillItem(
+                    painter = painterResource(id = R.drawable.restart_alt_24px),
+                    iconBg = Color(0xFFC4D3FF),
+                    iconTint = Color(0xFF00227B),
+                    text = "Refresh Map Data",
+                    onClick = { /* Logic for Refresh Map Data */ }
+                )
+            }
 
-            // About Section
-            SettingsSectionTitle("About", textColor)
+            SettingsSectionTitle("About")
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.info_24px),
-                iconBg = Color(0xFFA8E5F2),
-                text = "Capstone Project Created by PCC Students",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = Color(0xFFAEEAFA),
+                iconTint = Color(0xFF006875),
+                text = "Capstone Project Created by PCC Students"
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "version: $appVersion",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = Color(0xFFD9D9D9),
+                iconTint = Color(0xFF49454F),
+                text = "version: $appVersion"
             )
 
-            // Developer Section
-            SettingsSectionTitle("Developer", textColor)
+            SettingsSectionTitle("Developer")
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "Renmar O. Dumol",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = colorScheme.surfaceVariant,
+                text = "Renmar O. Dumol"
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "Sophia May P. Palomo",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = colorScheme.surfaceVariant,
+                text = "Sophia May P. Palomo"
             )
 
-            // Members Section
-            SettingsSectionTitle("Members", textColor)
+            SettingsSectionTitle("Members")
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "Jb L. Joguilon",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = colorScheme.surfaceVariant,
+                text = "Jb L. Joguilon"
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "Ian Charles E. Sorsan",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = colorScheme.surfaceVariant,
+                text = "Ian Charles E. Sorsan"
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             SettingsPillItem(
                 painter = painterResource(id = R.drawable.deployed_code_24px),
-                iconBg = Color(0xFFC7C7CC),
-                text = "Aizza P. Panizales",
-                textColor = textColor,
-                cardColor = cardColor
+                iconBg = colorScheme.surfaceVariant,
+                text = "Aizza P. Panizales"
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -316,14 +284,14 @@ fun SettingsScreen(
                 .padding(bottom = 32.dp)
         ) {
             Surface(
-                color = if (isDark) Color(0xFF333333) else Color(0xFF323232),
+                color = colorScheme.inverseSurface,
                 shape = RoundedCornerShape(24.dp),
                 tonalElevation = 6.dp,
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(
                     text = snackbarMessage ?: "",
-                    color = Color.White,
+                    color = colorScheme.inverseOnSurface,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     fontSize = 14.sp
                 )
@@ -333,13 +301,13 @@ fun SettingsScreen(
 }
 
 @Composable
-fun SettingsSectionTitle(title: String, color: Color) {
+fun SettingsSectionTitle(title: String) {
     Spacer(modifier = Modifier.height(28.dp))
     Text(
         text = title,
-        fontSize = 20.sp,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = color,
+        color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier.padding(start = 4.dp)
     )
     Spacer(modifier = Modifier.height(16.dp))
@@ -347,17 +315,20 @@ fun SettingsSectionTitle(title: String, color: Color) {
 
 @Composable
 fun SettingsPillItem(
-    painter: Painter,
+    painter: Painter? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     iconBg: Color,
+    iconTint: Color? = null,
     text: String,
-    textColor: Color,
-    cardColor: Color,
     onClick: (() -> Unit)? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val finalIconTint = iconTint ?: colorScheme.onSurfaceVariant
+    
     Surface(
         modifier = Modifier.fillMaxWidth().height(72.dp),
         shape = RoundedCornerShape(36.dp),
-        color = cardColor,
+        color = colorScheme.surfaceVariant.copy(alpha = 0.5f),
         onClick = onClick ?: {}
     ) {
         Row(
@@ -369,19 +340,30 @@ fun SettingsPillItem(
                 shape = CircleShape,
                 color = iconBg
             ) {
-                Icon(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier.padding(14.dp),
-                    tint = Color.Black
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    if (painter != null) {
+                        Icon(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = finalIconTint
+                        )
+                    } else if (icon != null) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = finalIconTint
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = text,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = textColor,
+                color = colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -401,10 +383,15 @@ private fun getFolderSize(file: File?): Long {
     return size
 }
 
-@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, name = "Light Mode Admin")
 @Composable
-fun SettingsScreenLightPreview() {
+fun SettingsScreenAdminPreview() {
     CampusAtlasTheme(darkTheme = false) {
-        SettingsScreen(onBackClick = {})
+        SettingsScreen(
+            navController = rememberNavController(),
+            isAdminMode = true,
+            canSwitchAdminMode = true,
+            onBackClick = {}
+        )
     }
 }

@@ -30,6 +30,11 @@ fun AppMain() {
         mutableStateOf(sharedPreferences.getBoolean("is_admin_mode", false))
     }
 
+    // track if user chose admin mode on startup
+    var wasInitiallyAdmin by remember {
+        mutableStateOf(sharedPreferences.getBoolean("was_initially_admin", false))
+    }
+
     LaunchedEffect(isAdminMode) {
         sharedPreferences.edit {
             putBoolean("is_admin_mode", isAdminMode)
@@ -46,8 +51,10 @@ fun AppMain() {
             FirstSetupScreen(
                 onFinish = { isAdminSelected ->
                     isAdminMode = isAdminSelected
+                    wasInitiallyAdmin = isAdminSelected
                     sharedPreferences.edit {
                         putBoolean("is_first_run", false)
+                        putBoolean("was_initially_admin", isAdminSelected)
                     }
                     val destination = if (isAdminSelected) "admin_map" else "map"
                     navController.navigate(destination) {
@@ -81,7 +88,9 @@ fun AppMain() {
 
         composable("settings") {
             SettingsScreen(
+                navController = navController,
                 isAdminMode = isAdminMode,
+                canSwitchAdminMode = wasInitiallyAdmin,
                 onAdminModeChange = { newAdminMode -> 
                     isAdminMode = newAdminMode
                     val destination = if (newAdminMode) "admin_map" else "map"
