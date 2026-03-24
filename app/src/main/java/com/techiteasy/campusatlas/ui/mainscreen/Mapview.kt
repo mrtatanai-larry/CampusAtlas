@@ -21,7 +21,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun Mapview(
     navController: NavController,
-    isAdminMode: Boolean = false
+    isAdminMode: Boolean = false,
+    isEditorMode: Boolean = true,
+    onEditorModeChange: (Boolean) -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var searchText by remember { mutableStateOf("") }
@@ -86,7 +88,9 @@ fun Mapview(
                 ) {
                     if (!hasMapContent) {
                         Text(
-                            text = if (isAdminMode) "Admin Map View" else "Campus Map Will Display Here",
+                            text = if (isAdminMode) {
+                                if (isEditorMode) "Admin Map Editor" else "Admin Map Test View"
+                            } else "Campus Map Will Display Here",
                             style = MaterialTheme.typography.headlineMedium,
                             color = colorScheme.onSurface.copy(alpha = 0.5f)
                         )
@@ -98,7 +102,9 @@ fun Mapview(
                 if (isAdminMode) {
                     Box(modifier = Modifier.statusBarsPadding()) {
                         AdminMapOverlay(
-                            navController = navController
+                            navController = navController,
+                            isEditorMode = isEditorMode,
+                            onEditorModeChange = onEditorModeChange
                         )
                     }
                 } else {

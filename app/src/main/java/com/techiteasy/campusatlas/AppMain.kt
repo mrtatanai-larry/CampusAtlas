@@ -39,9 +39,20 @@ fun AppMain() {
         mutableStateOf(sharedPreferences.getBoolean("was_initially_admin", false))
     }
 
+    // Persist editor mode state
+    var isEditorMode by remember {
+        mutableStateOf(sharedPreferences.getBoolean("is_editor_mode", true))
+    }
+
     LaunchedEffect(isAdminMode) {
         sharedPreferences.edit {
             putBoolean("is_admin_mode", isAdminMode)
+        }
+    }
+
+    LaunchedEffect(isEditorMode) {
+        sharedPreferences.edit {
+            putBoolean("is_editor_mode", isEditorMode)
         }
     }
 
@@ -127,7 +138,12 @@ fun AppMain() {
                     }
                 }
             ) {
-                Mapview(navController = navController, isAdminMode = false)
+                Mapview(
+                    navController = navController,
+                    isAdminMode = false,
+                    isEditorMode = isEditorMode,
+                    onEditorModeChange = { isEditorMode = it }
+                )
             }
 
             composable(
@@ -167,7 +183,12 @@ fun AppMain() {
                     }
                 }
             ) {
-                Mapview(navController = navController, isAdminMode = isAdminMode)
+                Mapview(
+                    navController = navController,
+                    isAdminMode = isAdminMode,
+                    isEditorMode = isEditorMode,
+                    onEditorModeChange = { isEditorMode = it }
+                )
             }
 
             composable(
@@ -214,7 +235,12 @@ fun AppMain() {
                     }
                 }
             ) {
-                Mapview(navController = navController, isAdminMode = true)
+                Mapview(
+                    navController = navController,
+                    isAdminMode = true,
+                    isEditorMode = isEditorMode,
+                    onEditorModeChange = { isEditorMode = it }
+                )
             }
 
             composable(

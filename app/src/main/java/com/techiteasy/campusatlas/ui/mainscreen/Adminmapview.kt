@@ -17,14 +17,14 @@ import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
 @Composable
 fun AdminMapOverlay(
     navController: NavController,
+    isEditorMode: Boolean,
+    onEditorModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isEditorMode by remember { mutableStateOf(true) }
-
     Box(modifier = modifier.fillMaxSize()) {
         AdminTools(
             isEditorMode = isEditorMode,
-            onModeChange = { isEditorMode = it },
+            onModeChange = onEditorModeChange,
             onSettingsClick = {
                 navController.navigate("settings") { launchSingleTop = true }
             },
@@ -49,7 +49,9 @@ fun AdminMapOverlayPreview() {
                 }
                 
                 AdminMapOverlay(
-                    navController = navController
+                    navController = navController,
+                    isEditorMode = true,
+                    onEditorModeChange = {}
                 )
                 
                 NavButtons(
@@ -76,7 +78,9 @@ fun AdminMapOverlayDarkPreview() {
                 }
                 
                 AdminMapOverlay(
-                    navController = navController
+                    navController = navController,
+                    isEditorMode = true,
+                    onEditorModeChange = {}
                 )
                 
                 NavButtons(
