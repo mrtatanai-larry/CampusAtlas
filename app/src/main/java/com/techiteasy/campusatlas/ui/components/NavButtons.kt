@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.techiteasy.campusatlas.R
 
 @Composable
@@ -13,23 +14,28 @@ fun NavButtons(
     navController: NavController,
     currentScreen: String,
     modifier: Modifier = Modifier,
-    onMapClick: () -> Unit = {},
-    onBookmarksClick: () -> Unit = {},
-    onDataTableClick: () -> Unit = {},
-    isAdminMode: Boolean = false
+    isAdminMode: Boolean = false,
+    onMapClick: (() -> Unit)? = null,
+    onBookmarksClick: (() -> Unit)? = null,
+    onDataTableClick: (() -> Unit)? = null
 ) {
     NavigationBar(modifier = modifier, tonalElevation = 4.dp) {
-
         if (isAdminMode) {
             // Editor Map Button (Only for Admin Mode)
             NavigationBarItem(
                 selected = currentScreen == "map",
                 onClick = {
-                    onMapClick()
-                    if (navController.currentDestination?.route != "admin_map") {
-                        navController.navigate("admin_map") {
-                            popUpTo("admin_map") { inclusive = true }
-                            launchSingleTop = true
+                    if (onMapClick != null) {
+                        onMapClick()
+                    } else {
+                        if (navController.currentDestination?.route != "admin_map") {
+                            navController.navigate("admin_map") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 },
@@ -41,10 +47,17 @@ fun NavButtons(
             NavigationBarItem(
                 selected = currentScreen == "datatable",
                 onClick = {
-                    onDataTableClick()
-                    if (navController.currentDestination?.route != "datatable") {
-                        navController.navigate("datatable") {
-                            launchSingleTop = true
+                    if (onDataTableClick != null) {
+                        onDataTableClick()
+                    } else {
+                        if (navController.currentDestination?.route != "datatable") {
+                            navController.navigate("datatable") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 },
@@ -56,11 +69,17 @@ fun NavButtons(
             NavigationBarItem(
                 selected = currentScreen == "map",
                 onClick = {
-                    onMapClick()
-                    if (navController.currentDestination?.route != "map") {
-                        navController.navigate("map") {
-                            popUpTo("map") { inclusive = true }
-                            launchSingleTop = true
+                    if (onMapClick != null) {
+                        onMapClick()
+                    } else {
+                        if (navController.currentDestination?.route != "map") {
+                            navController.navigate("map") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 },
@@ -72,8 +91,18 @@ fun NavButtons(
             NavigationBarItem(
                 selected = currentScreen == "bookmarks",
                 onClick = {
-                    if (currentScreen != "bookmarks") {
+                    if (onBookmarksClick != null) {
                         onBookmarksClick()
+                    } else {
+                        if (navController.currentDestination?.route != "bookmarks") {
+                            navController.navigate("bookmarks") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     }
                 },
                 icon = { Icon(painterResource(R.drawable.ic_bookmark), contentDescription = "Bookmarks") },

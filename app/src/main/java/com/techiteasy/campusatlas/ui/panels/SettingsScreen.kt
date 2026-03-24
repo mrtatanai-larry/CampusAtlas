@@ -173,7 +173,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 SettingsPillItem(
-                    painter = painterResource(id = R.drawable.restart_alt_24px),
+                    painter = painterResource(id = R.drawable.build_circle_24px),
                     iconBg = Color(0xFFB3F5BC),
                     iconTint = Color(0xFF1B5E20),
                     text = "Reset App Setup",
@@ -187,7 +187,7 @@ fun SettingsScreen(
                 SettingsSectionTitle("App Data")
                 
                 SettingsPillItem(
-                    painter = painterResource(id = R.drawable.restart_alt_24px),
+                    painter = painterResource(id = R.drawable.build_circle_24px),
                     iconBg = Color(0xFFB3F5BC),
                     iconTint = Color(0xFF1B5E20),
                     text = "Reset App Setup",

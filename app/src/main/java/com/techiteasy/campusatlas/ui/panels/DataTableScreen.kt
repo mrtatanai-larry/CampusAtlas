@@ -30,26 +30,13 @@ fun DataTableScreen(
     val colorScheme = MaterialTheme.colorScheme
     
     Scaffold(
-        bottomBar = {
-            NavButtons(
-                navController = navController,
-                currentScreen = "datatable",
-                isAdminMode = true,
-                onMapClick = {
-                    navController.navigate("admin_map") {
-                        popUpTo("admin_map") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { /* TODO: Upload to Firebase */ },
                 containerColor = colorScheme.primary,
                 contentColor = colorScheme.onPrimary,
                 shape = CircleShape,
-                modifier = Modifier.padding(bottom = 9.dp, end = 3.dp)
+                modifier = Modifier.padding(bottom = 16.dp, end = 8.dp)
             ) {
                 Text("Upload to Firebase", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.width(12.dp))
@@ -60,10 +47,18 @@ fun DataTableScreen(
                 )
             }
         },
+        bottomBar = {
+            NavButtons(
+                navController = navController,
+                currentScreen = "datatable",
+                isAdminMode = true
+                // We'll use default navigation logic for clicks
+            )
+        },
         containerColor = colorScheme.background
     ) { innerPadding ->
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())

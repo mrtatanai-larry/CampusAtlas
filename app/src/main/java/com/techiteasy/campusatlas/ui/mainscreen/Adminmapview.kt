@@ -19,11 +19,16 @@ fun AdminMapOverlay(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    var isEditorMode by remember { mutableStateOf(true) }
+
     Box(modifier = modifier.fillMaxSize()) {
         AdminTools(
+            isEditorMode = isEditorMode,
+            onModeChange = { isEditorMode = it },
             onSettingsClick = {
                 navController.navigate("settings") { launchSingleTop = true }
             },
+            onAddLocationClick = { /* Handle add location */ },
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 48.dp)

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.rememberNavController
 import com.techiteasy.campusatlas.ui.components.NavButtons
 import com.techiteasy.campusatlas.ui.components.Searchbar
@@ -29,7 +30,6 @@ fun Mapview(
     var currentScreen by remember { mutableStateOf("map") }
     
     // Logic to check if there is map or image content
-    // For now, we'll use a local state. You can connect this to your ViewModel later.
     var hasMapContent by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -75,7 +75,6 @@ fun Mapview(
                             color = colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     } else {
-                        // This is where your Map/Image content will be displayed
                         Text("Map Content Loaded")
                     }
                 }
@@ -117,6 +116,13 @@ fun Mapview(
             },
             onDataTableClick = {
                 currentScreen = "datatable"
+                navController.navigate("datatable") {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
