@@ -31,7 +31,7 @@ fun AdminMapOverlay(
             onAddLocationClick = { /* Handle add location */ },
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 48.dp)
+                .padding(top = 20.dp)
         )
     }
 }

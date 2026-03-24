@@ -10,9 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.techiteasy.campusatlas.ui.components.NavButtons
 import com.techiteasy.campusatlas.ui.components.Searchbar
 import com.techiteasy.campusatlas.ui.panels.BookmarksScreen
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
@@ -26,14 +25,32 @@ fun Mapview(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var searchText by remember { mutableStateOf("") }
-    var showBookmarks by remember { mutableStateOf(false) }
-    var currentScreen by remember { mutableStateOf("map") }
+    
+    // Sync sheet visibility with the current navigation route
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val isBookmarksRoute = currentRoute == "bookmarks"
     
     // Logic to check if there is map or image content
     var hasMapContent by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
-    val sheetState = rememberBottomSheetScaffoldState()
+    
+    // Initialize sheet state based on whether we are starting on the bookmarks route
+    val sheetState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = if (isBookmarksRoute) SheetValue.Expanded else SheetValue.PartiallyExpanded
+        )
+    )
+
+    // Handle updates when the route changes (e.g. clicking bottom nav)
+    LaunchedEffect(currentRoute) {
+        if (isBookmarksRoute) {
+            scope.launch { sheetState.bottomSheetState.expand() }
+        } else if (currentRoute == "map" || currentRoute == "admin_map") {
+            scope.launch { sheetState.bottomSheetState.partialExpand() }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -43,15 +60,14 @@ fun Mapview(
         BottomSheetScaffold(
             scaffoldState = sheetState,
             sheetPeekHeight = 0.dp,
-            sheetDragHandle = { if (showBookmarks) DragHandle() },
+            sheetDragHandle = { if (isBookmarksRoute) DragHandle() },
             sheetContainerColor = colorScheme.surface,
             sheetContent = {
-                if (showBookmarks) {
+                if (isBookmarksRoute) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(0.92f)
-                            .padding(bottom = 80.dp)
                     ) {
                         BookmarksScreen()
                     }
@@ -80,9 +96,11 @@ fun Mapview(
                 }
 
                 if (isAdminMode) {
-                    AdminMapOverlay(
-                        navController = navController
-                    )
+                    Box(modifier = Modifier.statusBarsPadding()) {
+                        AdminMapOverlay(
+                            navController = navController
+                        )
+                    }
                 } else {
                     Searchbar(
                         searchText = searchText,
@@ -91,41 +109,13 @@ fun Mapview(
                             navController.navigate("settings") { launchSingleTop = true }
                         },
                         modifier = Modifier
+                            .statusBarsPadding()
                             .align(Alignment.TopCenter)
-                            .padding(top = 48.dp)
+                            .padding(top = 16.dp)
                     )
                 }
             }
         }
-        
-        NavButtons(
-            navController = navController,
-            currentScreen = currentScreen,
-            isAdminMode = isAdminMode,
-            onBookmarksClick = {
-                showBookmarks = true
-                currentScreen = "bookmarks"
-                scope.launch { sheetState.bottomSheetState.expand() }
-            },
-            onMapClick = {
-                currentScreen = "map"
-                scope.launch {
-                    sheetState.bottomSheetState.partialExpand()
-                    showBookmarks = false
-                }
-            },
-            onDataTableClick = {
-                currentScreen = "datatable"
-                navController.navigate("datatable") {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 }
 

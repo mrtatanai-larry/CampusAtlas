@@ -106,6 +106,8 @@ fun FirstSetupScreen(
 
     Scaffold(
         containerColor = colorScheme.surfaceVariant,
+        // Set contentWindowInsets to 0 to handle edge-to-edge manually
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -679,6 +681,9 @@ fun UserSelectionStep(
                     Text(uploadError!!, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
+            
+            // Add navigation bar padding at the end of scrollable content
+            Spacer(modifier = Modifier.navigationBarsPadding())
         }
     }
 }

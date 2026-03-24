@@ -1,5 +1,6 @@
 package com.techiteasy.campusatlas.ui.panels
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,19 +29,13 @@ fun DataTableScreen(
     val colorScheme = MaterialTheme.colorScheme
     
     Scaffold(
-        modifier = modifier,
-        // Ensure content extends to edges and we handle insets manually
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { /* TODO: Upload to Firebase */ },
                 containerColor = colorScheme.primary,
                 contentColor = colorScheme.onPrimary,
                 shape = CircleShape,
-                // Add navigation bar padding to FAB so it's not too low
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(bottom = 16.dp, end = 8.dp)
+                modifier = Modifier.padding(bottom = 16.dp, end = 8.dp)
             ) {
                 Text("Upload to Firebase", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.width(12.dp))
@@ -57,12 +52,10 @@ fun DataTableScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .statusBarsPadding() // Add padding for the status bar
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
-            // Adjust this height to control the top spacing precisely
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             Text(
                 text = "Database",
@@ -193,9 +186,6 @@ fun DataTableScreen(
             
             // Empty space for cards
             Spacer(modifier = Modifier.height(200.dp))
-            
-            // Add navigation bar padding at the end of scrollable content
-            Spacer(modifier = Modifier.navigationBarsPadding())
         }
     }
 }

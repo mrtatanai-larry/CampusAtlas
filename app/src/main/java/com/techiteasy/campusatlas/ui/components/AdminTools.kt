@@ -37,8 +37,7 @@ fun AdminTools(
         Surface(
             onClick = { onModeChange(!isEditorMode) },
             modifier = Modifier
-                .padding(top = 16.dp)
-                .width(160.dp), // Fixed width to ensure size remains the same
+                .width(160.dp),
             shape = RoundedCornerShape(32.dp),
             color = colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
@@ -77,7 +76,7 @@ fun AdminTools(
 
         // Side Buttons (Settings & Add Location)
         Column(
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier, // Removed internal top padding
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             FloatingActionButton(
