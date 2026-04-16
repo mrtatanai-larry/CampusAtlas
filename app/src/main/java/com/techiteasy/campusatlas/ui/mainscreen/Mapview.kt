@@ -16,6 +16,11 @@ import com.techiteasy.campusatlas.ui.components.Searchbar
 import com.techiteasy.campusatlas.ui.panels.BookmarksScreen
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
 import kotlinx.coroutines.launch
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalInspectionMode
+import org.osmdroid.views.MapView
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,9 +38,6 @@ fun Mapview(
     val currentRoute = navBackStackEntry?.destination?.route
     val isBookmarksRoute = currentRoute == "bookmarks"
     
-    // Logic to check if there is map or image content
-    var hasMapContent by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
     
     // Initialize sheet state based on whether we are starting on the bookmarks route
@@ -86,16 +88,12 @@ fun Mapview(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (!hasMapContent) {
-                        Text(
-                            text = if (isAdminMode) {
-                                if (isEditorMode) "Admin Map Editor" else "Admin Map Test View"
-                            } else "Campus Map Will Display Here",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
+                    // Check if we are in preview mode to avoid loading the osmdroid MapView class,
+                    // which can cause NoClassDefFoundError in the Android Studio Layoutlib.
+                    if (LocalInspectionMode.current) {
+                        Text("OpenStreetMap Map Component (Preview)")
                     } else {
-                        Text("Map Content Loaded")
+                        OsmMapComponent()
                     }
                 }
 
@@ -123,6 +121,24 @@ fun Mapview(
             }
         }
     }
+}
+
+/**
+ * A wrapper for the OpenStreetMap MapView.
+ */
+@Composable
+private fun OsmMapComponent() {
+    AndroidView(
+        factory = { ctx ->
+            MapView(ctx).apply {
+                setTileSource(TileSourceFactory.MAPNIK)
+                setMultiTouchControls(true)
+                controller.setZoom(17.0)
+                controller.setCenter(GeoPoint(51.5074, -0.1278))
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 }
 
 @Preview(showBackground = true)

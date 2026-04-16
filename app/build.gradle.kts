@@ -52,6 +52,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation("androidx.navigation:navigation-compose:2.9.7")
 
+    // OpenStreetMap
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

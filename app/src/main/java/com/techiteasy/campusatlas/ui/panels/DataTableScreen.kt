@@ -139,49 +139,6 @@ fun DataTableScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Upload Image Section
-            Text(
-                text = "Upload Image",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(72.dp),
-                shape = RoundedCornerShape(36.dp),
-                color = colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Upload/Update Image here...",
-                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Surface(
-                        onClick = { /* TODO */ },
-                        shape = CircleShape,
-                        color = colorScheme.secondaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.upload_24px),
-                                contentDescription = "Upload",
-                                tint = colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(36.dp))
-
             // Mark Locations Section
             Text(
                 text = "Mark Locations",

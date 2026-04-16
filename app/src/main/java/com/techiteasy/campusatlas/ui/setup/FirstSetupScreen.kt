@@ -4,10 +4,6 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,9 +11,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,19 +21,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -52,8 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.techiteasy.campusatlas.ui.theme.CampusAtlasTheme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 @Composable
@@ -70,8 +57,6 @@ fun FirstSetupScreen(
     // Admin Specific State
     var isAdminLoggedIn by remember { mutableStateOf(false) }
     var adminGeneratedCode by remember { mutableStateOf("") }
-    var mapImageUri by remember { mutableStateOf<Uri?>(null) }
-    var mapImageDimensions by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     
     // Handle back gesture
     BackHandler(enabled = currentStep > 0) {
@@ -96,7 +81,7 @@ fun FirstSetupScreen(
             schoolCode.isNotBlank()
         } else {
             // Button will be highlighted even if password is wrong
-            adminPassword.isNotBlank() && isAdminLoggedIn && adminGeneratedCode.isNotBlank() && mapImageUri != null
+            adminPassword.isNotBlank() && isAdminLoggedIn && adminGeneratedCode.isNotBlank()
         }
         else -> true
     }
@@ -206,11 +191,6 @@ fun FirstSetupScreen(
                                 passwordError = false // Clear error when typing
                             },
                             passwordError = passwordError,
-                            mapImageUri = mapImageUri,
-                            onImageSelected = { uri, dims -> 
-                                mapImageUri = uri
-                                mapImageDimensions = dims
-                            },
                             isAdminLoggedIn = isAdminLoggedIn,
                             onAdminLoginToggle = { loggedIn ->
                                 isAdminLoggedIn = loggedIn
@@ -219,14 +199,12 @@ fun FirstSetupScreen(
                                     adminGeneratedCode = "PNHS-${Random.nextInt(1000, 9999)}"
                                 } else {
                                     adminGeneratedCode = ""
-                                    mapImageUri = null
                                 }
                             },
                             generatedCode = adminGeneratedCode
                         )
                         3 -> SetupCompleteStep(
-                            userMode = userMode,
-                            dimensions = mapImageDimensions
+                            userMode = userMode
                         )
                     }
                 }
@@ -315,56 +293,13 @@ fun UserSelectionStep(
     adminPassword: String,
     onPasswordChange: (String) -> Unit,
     passwordError: Boolean,
-    mapImageUri: Uri?,
-    onImageSelected: (Uri?, Pair<Int, Int>?) -> Unit,
     isAdminLoggedIn: Boolean,
     onAdminLoginToggle: (Boolean) -> Unit,
     generatedCode: String
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
-    var uploadError by remember { mutableStateOf<String?>(null) }
-    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    // Update preview if image is selected
-    LaunchedEffect(mapImageUri) {
-        if (mapImageUri != null) {
-            try {
-                context.contentResolver.openInputStream(mapImageUri)?.use { input ->
-                    val options = BitmapFactory.Options().apply { inSampleSize = 4 }
-                    previewBitmap = BitmapFactory.decodeStream(input, null, options)
-                }
-            } catch (_: Exception) {
-                previewBitmap = null
-            }
-        } else {
-            previewBitmap = null
-        }
-    }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val result = validateCampusImage(context, uri)
-            if (result.isValid) {
-                uploadError = null
-                scope.launch {
-                    isUploading = true
-                    // Simulate uploading to firebase
-                    delay(2000)
-                    isUploading = false
-                    onImageSelected(uri, result.dimensions)
-                }
-            } else {
-                uploadError = result.errorMessage
-                onImageSelected(null, null)
-            }
-        }
-    }
 
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text(
@@ -454,7 +389,7 @@ fun UserSelectionStep(
         } else {
             // Admin UI
             Text(
-                text = "Manage campus map data. First sign in to generate your campus code and enable map upload.",
+                text = "Manage campus map data. First sign in to generate your campus code.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
@@ -588,99 +523,6 @@ fun UserSelectionStep(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            // 3. Campus Map Image
-            Text("Campus Map Image", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box(modifier = Modifier.alpha(if (isAdminLoggedIn) 1f else 0.5f)) {
-                if (mapImageUri == null) {
-                    OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        enabled = isAdminLoggedIn && !isUploading,
-                        border = if (uploadError != null) androidx.compose.foundation.BorderStroke(1.dp, colorScheme.error) else ButtonDefaults.outlinedButtonBorder(enabled = isAdminLoggedIn)
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (isUploading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp),
-                                    color = colorScheme.primary,
-                                    strokeWidth = 3.dp
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(id = com.techiteasy.campusatlas.R.drawable.upload_24px),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(if (isUploading) "Uploading to Firebase..." else "Click to Upload Map", fontWeight = FontWeight.SemiBold)
-                            Text("PNG/JPG • Min 1000px • Max 5MB", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(colorScheme.surfaceVariant)
-                            .border(1.dp, colorScheme.primary, RoundedCornerShape(20.dp))
-                    ) {
-                        previewBitmap?.let {
-                            Image(
-                                bitmap = it.asImageBitmap(),
-                                contentDescription = "Map preview",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        IconButton(
-                            onClick = { onImageSelected(null, null) },
-                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(colorScheme.surface.copy(alpha = 0.7f), CircleShape)
-                        ) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = colorScheme.error)
-                        }
-                        Surface(
-                            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
-                            color = colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = colorScheme.onPrimaryContainer
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Map Uploaded successfully",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (uploadError != null) {
-                Row(
-                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = colorScheme.error, modifier = Modifier.size(16.dp).padding(top = 2.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(uploadError!!, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
             
             // Add navigation bar padding at the end of scrollable content
             Spacer(modifier = Modifier.navigationBarsPadding())
@@ -712,8 +554,7 @@ fun ModeButton(
 
 @Composable
 fun SetupCompleteStep(
-    userMode: String,
-    dimensions: Pair<Int, Int>? = null
+    userMode: String
 ) {
     val colorScheme = MaterialTheme.colorScheme
     Column(modifier = Modifier.fillMaxSize()) {
@@ -733,59 +574,6 @@ fun SetupCompleteStep(
             color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             lineHeight = 22.sp
         )
-        if (userMode == "Admin" && dimensions != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Map resolution: ${dimensions.first} x ${dimensions.second} px",
-                style = MaterialTheme.typography.bodySmall,
-                color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
-data class ImageValidationResult(
-    val isValid: Boolean,
-    val errorMessage: String? = null,
-    val dimensions: Pair<Int, Int>? = null
-)
-
-private fun validateCampusImage(context: Context, uri: Uri): ImageValidationResult {
-    val contentResolver = context.contentResolver
-    
-    // Check file size (max 5MB)
-    val fileSize = try {
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-                if (sizeIndex != -1) cursor.getLong(sizeIndex) else 0L
-            } else 0L
-        } ?: 0L
-    } catch (_: Exception) {
-        0L
-    }
-    
-    if (fileSize > 5 * 1024 * 1024) {
-        return ImageValidationResult(false, "Image size exceeds 5MB limit.")
-    }
-    
-    // Check dimensions (min 1000px)
-    return try {
-        contentResolver.openInputStream(uri)?.use { input ->
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeStream(input, null, options)
-            
-            val width = options.outWidth
-            val height = options.outHeight
-            
-            if (width < 1000 || height < 1000) {
-                ImageValidationResult(false, "Image must be at least 1000x1000 pixels (Current: ${width}x${height}px).")
-            } else {
-                ImageValidationResult(true, dimensions = Pair(width, height))
-            }
-        } ?: ImageValidationResult(false, "Could not read image file.")
-    } catch (e: Exception) {
-        ImageValidationResult(false, "Error processing image: ${e.localizedMessage}")
     }
 }
 
