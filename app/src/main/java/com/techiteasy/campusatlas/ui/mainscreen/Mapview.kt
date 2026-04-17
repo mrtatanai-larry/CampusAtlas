@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import org.osmdroid.views.MapView
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.BoundingBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,10 +129,10 @@ fun Mapview(
  */
 @Composable
 private fun OsmMapComponent() {
-    var currentZoom by remember { mutableStateOf(20.5) }
-    var currentLat by remember { mutableStateOf(11.1105) }
-    var currentLon by remember { mutableStateOf(122.6441) }
-    var currentRotation by remember { mutableStateOf(0f) }
+    var currentZoom by remember { mutableStateOf(20.40) }
+    var currentLat by remember { mutableStateOf(11.110663) }
+    var currentLon by remember { mutableStateOf(122.643741) }
+    var currentRotation by remember { mutableStateOf(9.7f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
@@ -140,6 +141,13 @@ private fun OsmMapComponent() {
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(true)
                     setBuiltInZoomControls(false) // removes + and - buttons
+                    minZoomLevel = 18.62
+                    maxZoomLevel = 20.90
+                    
+                    // Box the map to the school area (ISAT U Miagao vicinity)
+                    // Tightened the box to ~200m around the campus center.
+                    val schoolBounds = BoundingBox(11.1127, 122.6458, 11.1086, 122.6417)
+                    setScrollableAreaLimitDouble(schoolBounds)
                     
                     // Enable Rotation
                     val rotationGestureOverlay = org.osmdroid.views.overlay.gestures.RotationGestureOverlay(this)
@@ -209,9 +217,10 @@ private fun OsmMapComponent() {
                     locationOverlay.enableMyLocation()
                     overlays.add(locationOverlay)
                     
-                    val campusCenter = GeoPoint(11.1105, 122.6441)
-                    controller.setZoom(20.5)
+                    val campusCenter = GeoPoint(11.110663, 122.643741)
+                    controller.setZoom(20.40)
                     controller.setCenter(campusCenter)
+                    mapOrientation = 9.7f
                     
                     // Listener to update debug state
                     addMapListener(object : org.osmdroid.events.MapListener {
