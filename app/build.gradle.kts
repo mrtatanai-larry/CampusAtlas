@@ -55,6 +55,9 @@ dependencies {
     // OpenStreetMap
     implementation("org.osmdroid:osmdroid-android:6.1.20")
 
+    // Google Play Services Location for FusedLocationProvider
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
