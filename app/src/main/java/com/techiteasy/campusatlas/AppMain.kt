@@ -101,40 +101,37 @@ fun AppMain() {
                 )
             }
 
+            // Using pure fade transitions because sliding an AndroidView (like Osmdroid MapView) 
+            // causes black boxes, rendering glitches, and stuttering.
+            
             composable(
                 "map",
                 enterTransition = {
                     if (initialState.destination.route == "bookmarks" || initialState.destination.route == "admin_map") {
                         EnterTransition.None
                     } else {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 exitTransition = {
                     if (targetState.destination.route == "bookmarks" || targetState.destination.route == "admin_map") {
                         ExitTransition.None
                     } else {
-                        slideOutOfContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popEnterTransition = {
                     if (initialState.destination.route == "bookmarks" || initialState.destination.route == "admin_map") {
                         EnterTransition.None
                     } else {
-                        fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popExitTransition = {
                     if (targetState.destination.route == "bookmarks" || targetState.destination.route == "admin_map") {
                         ExitTransition.None
                     } else {
-                        fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 }
             ) {
@@ -152,34 +149,28 @@ fun AppMain() {
                     if (initialState.destination.route == "map" || initialState.destination.route == "admin_map") {
                         EnterTransition.None
                     } else {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 exitTransition = {
                     if (targetState.destination.route == "map" || targetState.destination.route == "admin_map") {
                         ExitTransition.None
                     } else {
-                        slideOutOfContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popEnterTransition = {
                     if (initialState.destination.route == "map" || initialState.destination.route == "admin_map") {
                         EnterTransition.None
                     } else {
-                        fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popExitTransition = {
                     if (targetState.destination.route == "map" || targetState.destination.route == "admin_map") {
                         ExitTransition.None
                     } else {
-                        fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 }
             ) {
@@ -196,42 +187,29 @@ fun AppMain() {
                 enterTransition = {
                     if (initialState.destination.route == "bookmarks" || initialState.destination.route == "map") {
                         EnterTransition.None
-                    } else if (initialState.destination.route == "datatable") {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeIn(animationSpec = tween(animDuration))
                     } else {
-                        fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 exitTransition = {
                     if (targetState.destination.route == "bookmarks" || targetState.destination.route == "map") {
                         ExitTransition.None
-                    } else if (targetState.destination.route == "datatable") {
-                        slideOutOfContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeOut(animationSpec = tween(animDuration))
                     } else {
-                        fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popEnterTransition = {
                     if (initialState.destination.route == "bookmarks" || initialState.destination.route == "map") {
                         EnterTransition.None
                     } else {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(animDuration, easing = animEasing)
-                        ) + fadeIn(animationSpec = tween(animDuration))
+                        fadeIn(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 },
                 popExitTransition = {
                     if (targetState.destination.route == "bookmarks" || targetState.destination.route == "map") {
                         ExitTransition.None
                     } else {
-                        fadeOut(animationSpec = tween(animDuration))
+                        fadeOut(animationSpec = tween(animDuration, easing = animEasing))
                     }
                 }
             ) {
@@ -245,36 +223,16 @@ fun AppMain() {
 
             composable(
                 "datatable",
-                enterTransition = {
-                    slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(animDuration, easing = animEasing)
-                    ) + fadeIn(animationSpec = tween(animDuration))
-                },
-                exitTransition = {
-                    slideOutOfContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(animDuration, easing = animEasing)
-                    ) + fadeOut(animationSpec = tween(animDuration))
-                }
+                enterTransition = { fadeIn(animationSpec = tween(animDuration, easing = animEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(animDuration, easing = animEasing)) }
             ) {
                 DataTableScreen(navController = navController)
             }
 
             composable(
                 "settings",
-                enterTransition = {
-                    slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(animDuration, easing = animEasing)
-                    ) + fadeIn(animationSpec = tween(animDuration))
-                },
-                exitTransition = {
-                    slideOutOfContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(animDuration, easing = animEasing)
-                    ) + fadeOut(animationSpec = tween(animDuration))
-                }
+                enterTransition = { fadeIn(animationSpec = tween(animDuration, easing = animEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(animDuration, easing = animEasing)) }
             ) {
                 SettingsScreen(
                     navController = navController,
